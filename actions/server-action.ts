@@ -59,7 +59,7 @@ Please provide ONLY a JSON response (no additional commentary, no backticks) wit
 
     const result = await model.generateContent(prompt);
 
-    console.log("Gemini response:", result.response);
+    // console.log("Gemini response:", result.response);
 
     const text = await result.response.text();
 

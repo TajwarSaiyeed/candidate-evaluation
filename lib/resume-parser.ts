@@ -1,11 +1,5 @@
-import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/legacy/build/pdf.worker.js",
-  import.meta.url
-).toString();
-
-interface ParsedResume {
+import * as parser from "pdf-parse/lib/pdf-parse.js";
+export interface ParsedResume {
   text: string;
   keywords: string[];
 }
@@ -116,47 +110,10 @@ const EXPERIENCE_KEYWORDS = [
 ];
 
 /**
- * Parse PDF resume and extract text and keywords using pdf.js
- */
-export async function parsePdfResume(
-  fileBuffer: Buffer
-): Promise<ParsedResume> {
-  try {
-    const pdfDocument = await pdfjsLib.getDocument(new Uint8Array(fileBuffer))
-      .promise;
-
-    let fullText = "";
-    for (let i = 1; i <= pdfDocument.numPages; i++) {
-      const page = await pdfDocument.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item) => (item as any).str)
-        .join(" ");
-      fullText += pageText + "\n";
-    }
-
-    const keywords = extractKeywords(fullText);
-
-    return {
-      text: fullText,
-      keywords,
-    };
-  } catch (error) {
-    console.error("Error in parsePdfResume:", error);
-    return {
-      text: "An error occurred while processing the resume. Please try a different PDF file.",
-      keywords: [],
-    };
-  }
-}
-
-/**
- * Extract relevant keywords from resume text
+ * Extract relevant keywords from resume text.
  */
 function extractKeywords(text: string): string[] {
-  if (!text || typeof text !== "string") {
-    return [];
-  }
+  if (!text || typeof text !== "string") return [];
 
   const lowerText = text.toLowerCase();
   const foundKeywords: string[] = [];
@@ -183,7 +140,33 @@ function extractKeywords(text: string): string[] {
 }
 
 /**
- * Extract sections from resume text
+ * Parse a PDF resume and extract its text and keywords using pdf-parse.
+ */
+export async function parsePdfResume(
+  fileBuffer: Buffer
+): Promise<ParsedResume> {
+  try {
+    console.log("Parsing PDF resume...", fileBuffer);
+    
+    const data = await parser(fileBuffer);
+    const fullText = data.text;
+    const keywords = extractKeywords(fullText);
+    
+    return {
+      text: fullText,
+      keywords,
+    };
+  } catch (error) {
+    console.error("Error in parsePdfResume:", error);
+    return {
+      text: "An error occurred while processing the resume. Please try a different PDF file.",
+      keywords: [],
+    };
+  }
+}
+
+/**
+ * Optionally, extract sections from resume text.
  */
 export function extractResumeSections(text: string): Record<string, string> {
   if (!text || typeof text !== "string") {
@@ -191,7 +174,6 @@ export function extractResumeSections(text: string): Record<string, string> {
   }
 
   const sections: Record<string, string> = {};
-
   const sectionHeaders = [
     "education",
     "experience",
@@ -207,12 +189,10 @@ export function extractResumeSections(text: string): Record<string, string> {
 
   let currentSection = "summary";
   sections[currentSection] = "";
-
   const lines = text.split("\n");
 
   for (const line of lines) {
     const lowerLine = line.toLowerCase().trim();
-
     const matchedHeader = sectionHeaders.find(
       (header) =>
         lowerLine === header ||
@@ -220,7 +200,6 @@ export function extractResumeSections(text: string): Record<string, string> {
         lowerLine === header.toUpperCase() ||
         lowerLine === header.toUpperCase() + ":"
     );
-
     if (matchedHeader) {
       currentSection = matchedHeader;
       sections[currentSection] = "";
