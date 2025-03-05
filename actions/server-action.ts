@@ -1,4 +1,3 @@
-// actions/evaluate.ts
 "use server";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -20,50 +19,55 @@ export async function evaluateCandidate(
       console.warn("Missing Gemini API key. Using mock candidate evaluation.");
       return {
         summary: "Mock evaluation",
-        matchScore: 75,
+        match_score: 75,
         strengths: ["Strong communication skills", "Great team player"],
         weaknesses: ["Limited experience with React"],
         recommendations: [
           "Take a React course",
           "Work on personal projects to build experience",
         ],
+        technical_score: 80,
+        experience_score: 70,
+        education_score: 90,
       };
     }
 
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const prompt = `
-Evaluate this candidate for the "${job.title}" position.
+      Evaluate this candidate for the "${job.title}" position.
+      JOB DESCRIPTION:
+      ${job.description}
+      
+      REQUIREMENTS:
+      ${job.requirements.join("\n")}
 
-JOB DESCRIPTION:
-${job.description}
+      CANDIDATE PROFILE:
+      Name: ${candidate.name}
+      Skills: ${candidate.skills}
+      Experience: ${candidate.experience}
+      Resume: ${candidate.resumeText}
 
-REQUIREMENTS:
-${job.requirements.join("\n")}
-
-CANDIDATE PROFILE:
-Name: ${candidate.name}
-Skills: ${candidate.skills}
-Experience: ${candidate.experience}
-Resume: ${candidate.resumeText}
-
-Please provide ONLY a JSON response (no additional commentary, no backticks) with the following structure:
-{
-  "summary": "Overall evaluation of the candidate",
-  "matchScore": number, // a number between 0-100 representing the match score
-  "strengths": ["List of 3-5 candidate strengths relevant to this position"],
-  "weaknesses": ["List of 2-3 areas for improvement"],
-  "recommendations": ["List of 2-3 specific recommendations for the candidate"]
-}
+      Please provide ONLY a JSON response (no additional commentary, no backticks) with the following structure:
+      {
+        "summary": "Overall evaluation of the candidate",
+        "match_score": number,
+        "technical_score": number,
+        "experience_score": number,
+        "education_score": number,
+        "strengths": ["List of 3-5 candidate strengths relevant to this position"],
+        "weaknesses": ["List of 2-3 areas for improvement"],
+        "recommendations": ["List of 2-3 specific recommendations for the candidate"]
+      }
     `;
 
     const result = await model.generateContent(prompt);
-
-    // console.log("Gemini response:", result.response);
-
     const text = await result.response.text();
 
-    const cleanedText = text.replace(/```json\n/g, "").replace(/```/g, "");
+    const cleanedText = text
+      .replace(/```json\n/g, "")
+      .replace(/```/g, "")
+      .trim();
 
     try {
       return JSON.parse(cleanedText) as CandidateEvaluation;
@@ -74,25 +78,31 @@ Please provide ONLY a JSON response (no additional commentary, no backticks) wit
         "Response text:",
         text,
         "Cleaned text:",
-        cleanedText // Log the cleaned text for debugging
+        cleanedText
       );
       return {
         summary:
           "Error evaluating candidate - Could not parse Gemini response.",
-        matchScore: 0,
+        match_score: 0,
         strengths: [],
         weaknesses: [],
         recommendations: [],
+        technical_score: 0,
+        experience_score: 0,
+        education_score: 0,
       };
     }
   } catch (error) {
     console.error("Error evaluating candidate:", error);
     return {
       summary: "Error evaluating candidate - Gemini API call failed.",
-      matchScore: 0,
+      match_score: 0,
       strengths: [],
       weaknesses: [],
       recommendations: [],
+      technical_score: 0,
+      experience_score: 0,
+      education_score: 0,
     };
   }
 }

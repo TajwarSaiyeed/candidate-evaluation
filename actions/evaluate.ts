@@ -1,4 +1,3 @@
-// actions/evaluate.ts
 import { supabase } from "@/lib/supabase/client";
 import { evaluateCandidate } from "./server-action";
 
@@ -20,10 +19,13 @@ export interface JobDescription {
 
 export interface CandidateEvaluation {
   summary: string;
-  matchScore: number;
+  match_score: number;
   strengths: string[];
   weaknesses: string[];
   recommendations: string[];
+  technical_score?: number;
+  experience_score?: number;
+  education_score?: number;
 }
 
 export async function generateEvaluationAction(
@@ -38,7 +40,7 @@ export async function generateEvaluationAction(
       .maybeSingle();
 
     if (candidateError || !candidateData) {
-      console.error("Error fetching candidate: 47 No line", candidateError);
+      console.error("Error fetching candidate:", candidateError);
       return { error: "Failed to fetch candidate data" };
     }
 
@@ -69,13 +71,20 @@ export async function generateEvaluationAction(
       requirements: jobData.requirements || [],
     };
 
-    const evaluation = await evaluateCandidate(candidate, job);
+    const evaluation: CandidateEvaluation = await evaluateCandidate(
+      candidate,
+      job
+    );
 
     const { error: updateError } = await supabase
       .from("applications")
       .update({
         summary: evaluation.summary,
-        match_score: evaluation.matchScore,
+        match_score: evaluation.match_score,
+        technical_score: evaluation.technical_score,
+        experience_score: evaluation.experience_score,
+        education_score: evaluation.education_score,
+        recommendations: evaluation.recommendations,
       })
       .eq("id", candidateId);
 
@@ -86,7 +95,11 @@ export async function generateEvaluationAction(
 
     return {
       summary: evaluation.summary,
-      matchScore: evaluation.matchScore,
+      match_score: evaluation.match_score,
+      technical_score: evaluation.technical_score,
+      experience_score: evaluation.experience_score,
+      education_score: evaluation.education_score,
+      recommendations: evaluation.recommendations,
     };
   } catch (error) {
     console.error("Error in generateEvaluationAction:", error);

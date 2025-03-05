@@ -22,7 +22,6 @@ export function SiteHeader() {
   const navigation = [
     { name: "Home", href: "/" },
     { name: "Jobs", href: "/jobs" },
-    { name: "Apply", href: "/apply" },
   ];
 
   const getInitials = (name: string) => {
