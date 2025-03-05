@@ -16,7 +16,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="container mx-auto py-8 md:py-12">
+      <main className="container mx-auto py-8 md:py-12 px-5">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
@@ -80,7 +80,7 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="border-t mt-12">
+      <footer className="border-t mt-12 px-5">
         <div className="container mx-auto py-6 flex flex-col md:flex-row items-center justify-between">
           <p className="text-sm text-muted-foreground">
             © 2025 Candidate Application System. All rights reserved.
