@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -65,7 +65,7 @@ const formSchema = z.object({
   jobId: z.string().optional(),
 });
 
-export default function ApplyPage() {
+function ApplyPageContent() {
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -381,5 +381,13 @@ export default function ApplyPage() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function ApplyPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ApplyPageContent />
+    </Suspense>
   );
 }
