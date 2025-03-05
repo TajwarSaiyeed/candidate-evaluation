@@ -1,11 +1,12 @@
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Briefcase } from "lucide-react"
+import Image from "next/image";
+import { buttonVariants } from "@/components/ui/button";
+import { Briefcase } from "lucide-react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export default function HeroSection() {
   return (
     <section className="relative py-20 md:py-32 overflow-hidden bg-black">
-      {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-radial from-primary/20 via-transparent to-transparent opacity-70"></div>
 
       <div className="container mx-auto px-4 relative z-10">
@@ -17,7 +18,8 @@ export default function HeroSection() {
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mb-10">
-            Apply for internship positions and get AI-powered feedback on your application
+            Apply for internship positions and get AI-powered feedback on your
+            application
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl mb-16">
@@ -27,8 +29,15 @@ export default function HeroSection() {
                   <Briefcase className="h-6 w-6 text-primary" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Apply Now</h3>
-                <p className="text-gray-400 text-sm mb-4">Submit your application with resume and skills</p>
-                <Button className="w-full mt-auto">Start Application</Button>
+                <p className="text-gray-400 text-sm mb-4">
+                  Submit your application with resume and skills
+                </p>
+                <Link
+                  href={"/apply"}
+                  className={cn(buttonVariants({ variant: "outline" }))}
+                >
+                  Start Application
+                </Link>
               </div>
             </div>
 
@@ -51,10 +60,15 @@ export default function HeroSection() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Job Listings</h3>
-                <p className="text-gray-400 text-sm mb-4">Browse available internship positions</p>
-                <Button variant="outline" className="w-full mt-auto border-gray-700 hover:bg-gray-800">
+                <p className="text-gray-400 text-sm mb-4">
+                  Browse available internship positions
+                </p>
+                <Link
+                  href={"/apply"}
+                  className={cn(buttonVariants({ variant: "outline" }))}
+                >
                   View Positions
-                </Button>
+                </Link>
               </div>
             </div>
 
@@ -77,10 +91,9 @@ export default function HeroSection() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Admin Dashboard</h3>
-                <p className="text-gray-400 text-sm mb-4">Review and evaluate candidate applications</p>
-                <Button variant="outline" className="w-full mt-auto border-gray-700 hover:bg-gray-800">
-                  Admin Login
-                </Button>
+                <p className="text-gray-400 text-sm mb-4">
+                  Review and evaluate candidate applications
+                </p>
               </div>
             </div>
           </div>
@@ -98,6 +111,5 @@ export default function HeroSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }
-

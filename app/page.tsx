@@ -11,10 +11,8 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       <main>
-        {/* Hero Section */}
         <HeroSection />
 
-        {/* Features Section */}
         <section className="py-20 bg-gradient-to-b from-black to-gray-900">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
@@ -63,7 +61,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* How It Works Section */}
         <section className="py-20 bg-black">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
@@ -113,17 +110,13 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* AI Features Section */}
         <AIFeatureSection />
 
-        {/* Testimonials */}
         <TestimonialSection />
 
-        {/* CTA Section */}
         <CTASection />
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-gray-800 py-12 bg-black">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
