@@ -7,20 +7,43 @@ import { Filter, SlidersHorizontal, Download, Loader2 } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { supabase } from "@/lib/supabase/client";
 import { generateEvaluationAction } from "@/actions/evaluate";
-import { Application } from "@/types";
+import type { Application } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import CandidateList from "./components/candidate-list";
 import CandidateDetails from "./components/candidate-details";
+import { FilterDialog } from "@/components/filter-dialog";
+import { SortDialog } from "@/components/sort-dialog";
+import { ExportDialog } from "@/components/export-dialog";
 
 export default function AdminPage() {
   const { isAdmin, isLoading } = useAuth();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [applications, setApplications] = useState<Application[]>([]);
+  const [filteredApplications, setFilteredApplications] = useState<
+    Application[]
+  >([]);
   const [selectedApplication, setSelectedApplication] =
     useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
   const [evaluationLoading, setEvaluationLoading] = useState(false);
+
+  // Dialog states
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [sortDialogOpen, setSortDialogOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+
+  // Filter and sort states
+  const [filters, setFilters] = useState({
+    status: "all",
+    dateRange: "all",
+    score: "all",
+  });
+
+  const [sort, setSort] = useState({
+    field: "created_at",
+    direction: "desc" as "asc" | "desc",
+  });
 
   useEffect(() => {
     if (!isLoading && !isAdmin) {
@@ -41,6 +64,7 @@ export default function AdminPage() {
         console.error("Error fetching applications:", error);
       } else {
         setApplications(data || []);
+        setFilteredApplications(data || []);
         if (data && data.length > 0) {
           setSelectedApplication(data[0]);
         }
@@ -49,6 +73,100 @@ export default function AdminPage() {
     }
     fetchApplications();
   }, [isAdmin]);
+
+  // Apply filters to applications
+  useEffect(() => {
+    let result = [...applications];
+
+    // Apply status filter
+    if (filters.status !== "all") {
+      result = result.filter((app) => app.status === filters.status);
+    }
+
+    // Apply date range filter
+    if (filters.dateRange !== "all") {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      if (filters.dateRange === "today") {
+        result = result.filter((app) => {
+          const appDate = new Date(app.created_at || "");
+          return appDate >= today;
+        });
+      } else if (filters.dateRange === "week") {
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        result = result.filter((app) => {
+          const appDate = new Date(app.created_at || "");
+          return appDate >= weekStart;
+        });
+      } else if (filters.dateRange === "month") {
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        result = result.filter((app) => {
+          const appDate = new Date(app.created_at || "");
+          return appDate >= monthStart;
+        });
+      }
+    }
+
+    // Apply score filter
+    if (filters.score !== "all") {
+      if (filters.score === "high") {
+        result = result.filter((app) => (app.match_score || 0) >= 80);
+      } else if (filters.score === "medium") {
+        result = result.filter((app) => {
+          const score = app.match_score || 0;
+          return score >= 50 && score < 80;
+        });
+      } else if (filters.score === "low") {
+        result = result.filter((app) => (app.match_score || 0) < 50);
+      }
+    }
+
+    // Apply search term
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(
+        (app) =>
+          app.name?.toLowerCase().includes(term) ||
+          app.email?.toLowerCase().includes(term)
+      );
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      const fieldA = a[sort.field as keyof Application];
+      const fieldB = b[sort.field as keyof Application];
+
+      // Handle null/undefined values
+      if (fieldA === undefined || fieldA === null)
+        return sort.direction === "asc" ? -1 : 1;
+      if (fieldB === undefined || fieldB === null)
+        return sort.direction === "asc" ? 1 : -1;
+
+      // Compare based on type
+      if (typeof fieldA === "string" && typeof fieldB === "string") {
+        return sort.direction === "asc"
+          ? fieldA.localeCompare(fieldB)
+          : fieldB.localeCompare(fieldA);
+      } else {
+        // For numbers and dates
+        return sort.direction === "asc"
+          ? fieldA < fieldB
+            ? -1
+            : fieldA > fieldB
+            ? 1
+            : 0
+          : fieldB < fieldA
+          ? -1
+          : fieldB > fieldA
+          ? 1
+          : 0;
+      }
+    });
+
+    setFilteredApplications(result);
+  }, [applications, filters, sort, searchTerm]);
 
   const updateApplicationStatus = async (id: string, status: string) => {
     const { error } = await supabase
@@ -107,6 +225,14 @@ export default function AdminPage() {
     }
   };
 
+  const handleApplyFilters = (newFilters: typeof filters) => {
+    setFilters(newFilters);
+  };
+
+  const handleApplySort = (newSort: typeof sort) => {
+    setSort(newSort);
+  };
+
   if (isLoading || loading) {
     return (
       <div className="container flex items-center justify-center min-h-[calc(100vh-4rem)]">
@@ -129,15 +255,27 @@ export default function AdminPage() {
           </p>
         </div>
         <div className="flex items-center space-x-2 mt-4 md:mt-0">
-          <Button variant="outline" size="sm">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFilterDialogOpen(true)}
+          >
             <Filter className="h-4 w-4 mr-2" />
             Filter
           </Button>
-          <Button variant="outline" size="sm">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSortDialogOpen(true)}
+          >
             <SlidersHorizontal className="h-4 w-4 mr-2" />
             Sort
           </Button>
-          <Button variant="outline" size="sm">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setExportDialogOpen(true)}
+          >
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
@@ -147,7 +285,7 @@ export default function AdminPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
           <CandidateList
-            applications={applications}
+            applications={filteredApplications}
             selectedApplication={selectedApplication}
             setSelectedApplication={setSelectedApplication}
             searchTerm={searchTerm}
@@ -174,6 +312,27 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+
+      {/* Dialogs */}
+      <FilterDialog
+        open={filterDialogOpen}
+        onOpenChange={setFilterDialogOpen}
+        onApplyFilters={handleApplyFilters}
+        currentFilters={filters}
+      />
+
+      <SortDialog
+        open={sortDialogOpen}
+        onOpenChange={setSortDialogOpen}
+        onApplySort={handleApplySort}
+        currentSort={sort}
+      />
+
+      <ExportDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        applications={filteredApplications}
+      />
     </div>
   );
 }
